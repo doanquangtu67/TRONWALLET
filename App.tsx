@@ -14,7 +14,7 @@ import AiAssistant from './components/AiAssistant';
 import NotificationBell from './components/NotificationBell';
 import { 
   ShieldCheck, Copy, RefreshCw, Send, ArrowRight, Wallet, 
-  AlertTriangle, CheckCircle, ExternalLink, LogOut, Plus, Trash2, TrendingUp, TrendingDown,
+  AlertTriangle, CheckCircle, LogOut, Plus, Trash2, TrendingUp, TrendingDown,
   Lock, X
 } from 'lucide-react';
 
@@ -566,14 +566,6 @@ const App: React.FC = () => {
                                 <Button onClick={handleManualRefresh} variant="secondary" isLoading={isRefreshing} className="w-full text-sm">
                                     <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} /> Làm mới
                                 </Button>
-                                <a 
-                                    href="https://shasta.tronscan.org/#/" 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <ExternalLink size={16} /> Faucet
-                                </a>
                             </div>
                         </div>
 
