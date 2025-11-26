@@ -1,20 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StoredWallet, AppView, TransactionResult, AuthMode, TronPrice, Notification } from './types';
+import { StoredWallet, AppView, TransactionResult, AuthMode, TronPrice, Notification, User } from './types';
 import { createWallet, getBalance, sendTrx, validateAddress } from './services/tronService';
-import { registerUser, loginUser, logoutUser, getCurrentUser, getStoredWallets, saveWallet, updateWalletBalance, addNotification, getNotifications, deleteWallet } from './services/storageService';
+import { 
+  registerUser, loginUser, logoutUser, getCurrentUser, getUserProfile, 
+  enableTwoFactor, disableTwoFactor,
+  getStoredWallets, saveWallet, updateWalletBalance, addNotification, getNotifications, deleteWallet 
+} from './services/storageService';
 import { fetchTronPrice } from './services/priceService';
+import { generateSecret, generateOtpAuthUrl, verifyToken } from './services/twoFactorService';
 import Button from './components/Button';
 import Input from './components/Input';
 import AiAssistant from './components/AiAssistant';
 import NotificationBell from './components/NotificationBell';
 import { 
   ShieldCheck, Copy, RefreshCw, Send, ArrowRight, Wallet, 
-  AlertTriangle, CheckCircle, ExternalLink, LogOut, Plus, Trash2, TrendingUp, TrendingDown 
+  AlertTriangle, CheckCircle, ExternalLink, LogOut, Plus, Trash2, TrendingUp, TrendingDown,
+  Lock, X
 } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- Global State ---
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [view, setView] = useState<AppView>(AppView.AUTH);
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
 
@@ -37,11 +44,27 @@ const App: React.FC = () => {
   const [txError, setTxError] = useState('');
   const [sending, setSending] = useState(false);
 
+  // --- 2FA State ---
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [show2FAPrompt, setShow2FAPrompt] = useState(false);
+  
+  // 2FA Setup
+  const [tempSecret, setTempSecret] = useState('');
+  const [tempQrUrl, setTempQrUrl] = useState('');
+  const [setupToken, setSetupToken] = useState('');
+  const [setupError, setSetupError] = useState('');
+  
+  // 2FA Verify (Transaction)
+  const [verifyTokenInput, setVerifyTokenInput] = useState('');
+  const [verifyError, setVerifyError] = useState('');
+
   // --- Initialization ---
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      const profile = getUserProfile();
+      setUserProfile(profile);
       setView(AppView.DASHBOARD);
       loadUserData();
     }
@@ -147,6 +170,7 @@ const App: React.FC = () => {
       const success = loginUser(username, password);
       if (success) {
         setCurrentUser(username);
+        setUserProfile(getUserProfile());
         setView(AppView.DASHBOARD);
         loadUserData();
       } else {
@@ -158,6 +182,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
+    setUserProfile(null);
     setView(AppView.AUTH);
     setWallets([]);
     setSelectedWalletId(null);
@@ -209,25 +234,90 @@ const App: React.FC = () => {
       setIsRefreshing(false);
   }
 
-  const handleSend = async () => {
-    setTxError('');
-    setTxResult(null);
+  // --- Handlers: 2FA Setup ---
+  const openSecurityModal = () => {
+    if (!userProfile?.isTwoFactorEnabled) {
+        // Generate new secret for setup
+        const secret = generateSecret();
+        const otpUrl = generateOtpAuthUrl(currentUser || 'User', secret);
+        // Using qrserver API for QR code generation
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpUrl)}`;
+        
+        setTempSecret(secret);
+        setTempQrUrl(qrUrl);
+    }
+    setSetupToken('');
+    setSetupError('');
+    setShowSecurityModal(true);
+  }
 
+  const handleEnable2FA = () => {
+      if (verifyToken(setupToken, tempSecret)) {
+          enableTwoFactor(tempSecret);
+          setUserProfile(getUserProfile());
+          setShowSecurityModal(false);
+          alert('Bảo mật 2FA đã được kích hoạt thành công!');
+      } else {
+          setSetupError('Mã xác thực không đúng. Vui lòng thử lại.');
+      }
+  }
+
+  const handleDisable2FA = () => {
+      if (window.confirm('Bạn có chắc muốn tắt bảo mật 2FA? Tài khoản của bạn sẽ kém an toàn hơn.')) {
+          disableTwoFactor();
+          setUserProfile(getUserProfile());
+          setShowSecurityModal(false);
+      }
+  }
+
+  // --- Handlers: Send Transaction ---
+
+  const handleSendClick = () => {
+      setTxError('');
+      setTxResult(null);
+
+      // Validation
+      const currentWallet = wallets.find(w => w.id === selectedWalletId);
+      if (!currentWallet) return;
+
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+          setTxError('Số lượng không hợp lệ');
+          return;
+      }
+      if (!validateAddress(recipient)) {
+          setTxError('Địa chỉ ví nhận không hợp lệ');
+          return;
+      }
+      if (Number(amount) > currentWallet.balance) {
+          setTxError('Số dư không đủ');
+          return;
+      }
+
+      // Check if 2FA is enabled
+      if (userProfile?.isTwoFactorEnabled) {
+          setVerifyTokenInput('');
+          setVerifyError('');
+          setShow2FAPrompt(true);
+      } else {
+          // Send directly if no 2FA
+          executeTransaction();
+      }
+  }
+
+  const handle2FAVerifyAndSend = () => {
+      if (!userProfile?.twoFactorSecret) return;
+
+      if (verifyToken(verifyTokenInput, userProfile.twoFactorSecret)) {
+          setShow2FAPrompt(false);
+          executeTransaction();
+      } else {
+          setVerifyError('Mã xác thực không đúng');
+      }
+  }
+
+  const executeTransaction = async () => {
     const currentWallet = wallets.find(w => w.id === selectedWalletId);
     if (!currentWallet) return;
-
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        setTxError('Số lượng không hợp lệ');
-        return;
-    }
-    if (!validateAddress(recipient)) {
-        setTxError('Địa chỉ ví nhận không hợp lệ');
-        return;
-    }
-    if (Number(amount) > currentWallet.balance) {
-        setTxError('Số dư không đủ');
-        return;
-    }
 
     setSending(true);
     try {
@@ -241,7 +331,7 @@ const App: React.FC = () => {
             setTxResult(res);
             setAmount('');
             setRecipient('');
-            // Trigger poll immediately to update balance and show notification
+            // Trigger poll immediately
             setTimeout(pollData, 4000); 
         } else {
             setTxError('Giao dịch thất bại.');
@@ -319,7 +409,7 @@ const App: React.FC = () => {
   const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans relative">
       {/* Navbar */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -349,6 +439,14 @@ const App: React.FC = () => {
             <div className="h-8 w-[1px] bg-slate-700 mx-1"></div>
             
             <div className="flex items-center gap-2">
+               <button 
+                onClick={openSecurityModal}
+                className="flex items-center gap-2 p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
+                title="Cài đặt bảo mật"
+               >
+                 {userProfile?.isTwoFactorEnabled ? <ShieldCheck size={20} className="text-green-400"/> : <Lock size={20} />}
+               </button>
+
                <div className="text-right hidden sm:block">
                   <p className="text-xs text-slate-400">Xin chào,</p>
                   <p className="text-sm font-bold text-white">{currentUser}</p>
@@ -479,7 +577,7 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Private Key Warning Section - Toggleable? For now always show securely */}
+                        {/* Private Key Warning Section */}
                         <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-700/30 rounded-xl">
                             <div className="flex items-start gap-3">
                                 <AlertTriangle className="text-yellow-500 shrink-0 mt-0.5" size={18} />
@@ -547,12 +645,12 @@ const App: React.FC = () => {
                                 )}
 
                                 <Button 
-                                    onClick={handleSend} 
+                                    onClick={handleSendClick} 
                                     isLoading={sending} 
                                     className="w-full mt-2"
                                     disabled={!recipient || !amount}
                                 >
-                                    Xác nhận gửi
+                                    Xác nhận gửi {userProfile?.isTwoFactorEnabled && <ShieldCheck size={16} className="ml-2" />}
                                 </Button>
                             </div>
                         </div>
@@ -585,6 +683,106 @@ const App: React.FC = () => {
       </main>
 
       <AiAssistant />
+
+      {/* --- MODALS --- */}
+
+      {/* Security Setup Modal */}
+      {showSecurityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md p-6 shadow-2xl relative">
+                <button 
+                  onClick={() => setShowSecurityModal(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                >
+                    <X size={20} />
+                </button>
+
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <ShieldCheck className="text-green-500" />
+                    Cài đặt bảo mật 2FA
+                </h3>
+
+                {userProfile?.isTwoFactorEnabled ? (
+                    <div className="space-y-4">
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-center">
+                            <CheckCircle size={48} className="text-green-500 mx-auto mb-2" />
+                            <p className="text-green-400 font-bold">Bảo mật 2FA đang bật</p>
+                            <p className="text-slate-400 text-sm mt-1">Tài khoản của bạn được bảo vệ bởi Google Authenticator</p>
+                        </div>
+                        <Button variant="danger" onClick={handleDisable2FA} className="w-full">
+                            Tắt bảo mật 2FA
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <p className="text-slate-300 text-sm">
+                            1. Tải ứng dụng <strong>Google Authenticator</strong> trên điện thoại.<br/>
+                            2. Quét mã QR bên dưới.<br/>
+                            3. Nhập mã 6 số để kích hoạt.
+                        </p>
+                        
+                        <div className="flex justify-center bg-white p-4 rounded-xl">
+                            <img src={tempQrUrl} alt="2FA QR" className="w-40 h-40" />
+                        </div>
+                        
+                        <div>
+                            <Input 
+                                placeholder="Nhập mã 6 số (VD: 123456)"
+                                value={setupToken}
+                                onChange={e => {
+                                    if (e.target.value.length <= 6) setSetupToken(e.target.value);
+                                }}
+                                className="text-center tracking-widest text-lg font-mono"
+                            />
+                            {setupError && <p className="text-red-400 text-xs mt-1 text-center">{setupError}</p>}
+                        </div>
+
+                        <Button onClick={handleEnable2FA} className="w-full" disabled={setupToken.length !== 6}>
+                            Kích hoạt 2FA
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </div>
+      )}
+
+      {/* Transaction 2FA Prompt Modal */}
+      {show2FAPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+             <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-sm p-6 shadow-2xl relative">
+                <button 
+                  onClick={() => setShow2FAPrompt(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                >
+                    <X size={20} />
+                </button>
+
+                <div className="text-center mb-6">
+                    <ShieldCheck size={48} className="text-purple-500 mx-auto mb-3" />
+                    <h3 className="text-xl font-bold text-white">Xác thực giao dịch</h3>
+                    <p className="text-slate-400 text-sm">Nhập mã từ Google Authenticator để tiếp tục chuyển tiền.</p>
+                </div>
+
+                <div className="space-y-4">
+                    <Input 
+                        placeholder="000 000"
+                        value={verifyTokenInput}
+                        onChange={e => {
+                             if (e.target.value.length <= 6) setVerifyTokenInput(e.target.value);
+                        }}
+                        className="text-center tracking-widest text-2xl font-mono py-3"
+                        autoFocus
+                    />
+                    {verifyError && <p className="text-red-400 text-sm text-center font-medium bg-red-900/20 p-2 rounded">{verifyError}</p>}
+                    
+                    <Button onClick={handle2FAVerifyAndSend} className="w-full" disabled={verifyTokenInput.length !== 6}>
+                        Xác nhận & Gửi tiền
+                    </Button>
+                </div>
+             </div>
+        </div>
+      )}
+
     </div>
   );
 };

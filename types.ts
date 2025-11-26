@@ -26,6 +26,8 @@ export interface StoredWallet extends WalletData {
 export interface User {
   username: string;
   passwordHash: string; // Simple hash/storage for demo
+  twoFactorSecret?: string; // Base32 secret for TOTP
+  isTwoFactorEnabled?: boolean;
 }
 
 export interface Notification {

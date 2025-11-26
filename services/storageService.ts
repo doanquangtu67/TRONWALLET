@@ -12,8 +12,13 @@ export const registerUser = (username: string, password: string): boolean => {
   if (users.find((u: User) => u.username === username)) {
     return false; // User exists
   }
-  // In a real app, hash this password!
-  users.push({ username, passwordHash: password });
+  // Initialize with 2FA disabled
+  const newUser: User = { 
+    username, 
+    passwordHash: password,
+    isTwoFactorEnabled: false
+  };
+  users.push(newUser);
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   return true;
 };
@@ -34,6 +39,41 @@ export const logoutUser = () => {
 
 export const getCurrentUser = (): string | null => {
   return localStorage.getItem(CURRENT_USER_KEY);
+};
+
+// --- 2FA Helpers ---
+
+export const getUserProfile = (): User | null => {
+  const username = getCurrentUser();
+  if (!username) return null;
+  const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  return users.find((u: User) => u.username === username) || null;
+};
+
+export const enableTwoFactor = (secret: string) => {
+  const username = getCurrentUser();
+  if (!username) return;
+  const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  const userIndex = users.findIndex((u: User) => u.username === username);
+  
+  if (userIndex !== -1) {
+    users[userIndex].isTwoFactorEnabled = true;
+    users[userIndex].twoFactorSecret = secret;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+};
+
+export const disableTwoFactor = () => {
+  const username = getCurrentUser();
+  if (!username) return;
+  const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  const userIndex = users.findIndex((u: User) => u.username === username);
+  
+  if (userIndex !== -1) {
+    users[userIndex].isTwoFactorEnabled = false;
+    delete users[userIndex].twoFactorSecret;
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
 };
 
 // --- Wallet Helpers ---
