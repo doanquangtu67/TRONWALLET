@@ -17,15 +17,15 @@ export const askGeminiAssistant = async (
     const client = getAiClient();
     
     const systemInstruction = `
-      Bạn là một chuyên gia Blockchain thân thiện và am hiểu về mạng TRON.
-      Người dùng đang sử dụng ứng dụng Ví Tron Testnet (Shasta).
-      Nhiệm vụ của bạn là giải thích các khái niệm (ví dụ: Private Key, Address, TRX, Bandwidth, Energy) một cách dễ hiểu bằng Tiếng Việt.
-      Luôn nhắc nhở người dùng về bảo mật (không chia sẻ Private Key).
-      Hãy giữ câu trả lời ngắn gọn, súc tích (dưới 150 từ trừ khi được yêu cầu chi tiết).
+      You are a friendly Blockchain expert and knowledgeable about the TRON network.
+      The user is using a Tron Testnet Wallet (Shasta).
+      Your task is to explain concepts (e.g., Private Key, Address, TRX, Bandwidth, Energy) simply.
+      Always remind the user about security (never share Private Keys).
+      Keep answers concise (under 150 words unless asked for details).
     `;
 
     const fullPrompt = context 
-      ? `Ngữ cảnh hiện tại: ${context}\n\nCâu hỏi của người dùng: ${prompt}`
+      ? `Current Context: ${context}\n\nUser Question: ${prompt}`
       : prompt;
 
     const response = await client.models.generateContent({
@@ -37,9 +37,9 @@ export const askGeminiAssistant = async (
       }
     });
 
-    return response.text || "Xin lỗi, tôi không thể trả lời lúc này.";
+    return response.text || "Sorry, I cannot answer right now.";
   } catch (error) {
     console.error("Gemini Error:", error);
-    return "Đã xảy ra lỗi khi kết nối với trợ lý ảo.";
+    return "An error occurred while connecting to the AI assistant.";
   }
 };

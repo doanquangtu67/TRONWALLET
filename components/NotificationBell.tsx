@@ -59,19 +59,19 @@ const NotificationBell: React.FC<Props> = ({ hasUnread, onRead }) => {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
                     <div className="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-900">
-                        <h3 className="font-bold text-white text-sm">Thông báo</h3>
+                        <h3 className="font-bold text-white text-sm">Notifications</h3>
                         <button 
                             onClick={handleMarkRead}
                             className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
                         >
-                            <CheckCheck size={14} /> Đọc tất cả
+                            <CheckCheck size={14} /> Mark all read
                         </button>
                     </div>
                     
                     <div className="max-h-80 overflow-y-auto">
                         {notifications.length === 0 ? (
                             <div className="p-8 text-center text-slate-500 text-sm">
-                                Chưa có thông báo nào
+                                No notifications
                             </div>
                         ) : (
                             notifications.map(notif => (
@@ -82,7 +82,7 @@ const NotificationBell: React.FC<Props> = ({ hasUnread, onRead }) => {
                                             notif.type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
                                             'bg-blue-500/20 text-blue-400'
                                         }`}>
-                                            {notif.type === 'success' ? 'Nhận tiền' : notif.type === 'warning' ? 'Chuyển tiền' : 'Thông tin'}
+                                            {notif.type === 'success' ? 'Receive' : notif.type === 'warning' ? 'Send' : 'Info'}
                                         </span>
                                         <span className="text-xs text-slate-500">
                                             {new Date(notif.timestamp).toLocaleTimeString()}

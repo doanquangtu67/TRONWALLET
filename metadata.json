@@ -1,5 +1,5 @@
 {
   "name": "Copy of TronShasta Wallet",
-  "description": "Một ví tiền điện tử đơn giản trên mạng Tron Testnet (Shasta). Tạo ví, nhận TRX và chuyển tiền với sự hỗ trợ của AI.",
+  "description": "A simple crypto wallet on Tron Testnet (Shasta). Create wallets, receive TRX, and send funds with AI assistance.",
   "requestFramePermissions": []
 }

@@ -116,8 +116,8 @@ const App: React.FC = () => {
           // Add Notification
           const newNotif: Notification = {
               id: Date.now().toString() + Math.random(),
-              title: isReceive ? 'Nhận được TRX' : 'Đã gửi TRX',
-              message: `Ví ${w.name} vừa ${isReceive ? 'nhận' : 'chuyển'} ${Math.abs(diff).toLocaleString()} TRX. Số dư mới: ${newBal.toLocaleString()} TRX.`,
+              title: isReceive ? 'Received TRX' : 'Sent TRX',
+              message: `Wallet ${w.name} just ${isReceive ? 'received' : 'sent'} ${Math.abs(diff).toLocaleString()} TRX. New balance: ${newBal.toLocaleString()} TRX.`,
               type: isReceive ? 'success' : 'warning',
               timestamp: Date.now(),
               read: false
@@ -154,7 +154,7 @@ const App: React.FC = () => {
     setAuthError('');
     
     if (!username || !password) {
-      setAuthError('Vui lòng điền đầy đủ thông tin');
+      setAuthError('Please fill in all fields');
       return;
     }
 
@@ -162,9 +162,9 @@ const App: React.FC = () => {
       const success = registerUser(username, password);
       if (success) {
         setAuthMode('LOGIN');
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        alert('Registration successful! Please login.');
       } else {
-        setAuthError('Tên tài khoản đã tồn tại.');
+        setAuthError('Username already exists.');
       }
     } else {
       const success = loginUser(username, password);
@@ -174,7 +174,7 @@ const App: React.FC = () => {
         setView(AppView.DASHBOARD);
         loadUserData();
       } else {
-        setAuthError('Sai tên tài khoản hoặc mật khẩu.');
+        setAuthError('Incorrect username or password.');
       }
     }
   };
@@ -196,7 +196,7 @@ const App: React.FC = () => {
       const newWallet: StoredWallet = {
         ...rawWallet,
         id: Date.now().toString(),
-        name: `Ví Tron ${wallets.length + 1}`,
+        name: `Tron Wallet ${wallets.length + 1}`,
         balance: 0,
         createdAt: Date.now()
       };
@@ -208,17 +208,17 @@ const App: React.FC = () => {
       // Initialize ref
       previousBalances.current[newWallet.id] = 0;
       
-      alert(`Đã tạo ví mới: ${newWallet.name}`);
+      alert(`New wallet created: ${newWallet.name}`);
     } catch (e) {
       console.error(e);
-      alert('Lỗi tạo ví');
+      alert('Failed to create wallet');
     } finally {
       setIsRefreshing(false);
     }
   };
 
   const handleDeleteWallet = (id: string) => {
-      if (window.confirm('Bạn có chắc chắn muốn xóa ví này khỏi danh sách? Hãy chắc chắn bạn đã lưu Private Key ở nơi khác!')) {
+      if (window.confirm('Are you sure you want to remove this wallet? Make sure you have backed up the Private Key!')) {
           deleteWallet(id);
           const remaining = getStoredWallets();
           setWallets(remaining);
@@ -256,14 +256,14 @@ const App: React.FC = () => {
           enableTwoFactor(tempSecret);
           setUserProfile(getUserProfile());
           setShowSecurityModal(false);
-          alert('Bảo mật 2FA đã được kích hoạt thành công!');
+          alert('2FA enabled successfully!');
       } else {
-          setSetupError('Mã xác thực không đúng. Vui lòng thử lại.');
+          setSetupError('Invalid code. Please try again.');
       }
   }
 
   const handleDisable2FA = () => {
-      if (window.confirm('Bạn có chắc muốn tắt bảo mật 2FA? Tài khoản của bạn sẽ kém an toàn hơn.')) {
+      if (window.confirm('Are you sure you want to disable 2FA? Your account will be less secure.')) {
           disableTwoFactor();
           setUserProfile(getUserProfile());
           setShowSecurityModal(false);
@@ -281,15 +281,15 @@ const App: React.FC = () => {
       if (!currentWallet) return;
 
       if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-          setTxError('Số lượng không hợp lệ');
+          setTxError('Invalid amount');
           return;
       }
       if (!validateAddress(recipient)) {
-          setTxError('Địa chỉ ví nhận không hợp lệ');
+          setTxError('Invalid recipient address');
           return;
       }
       if (Number(amount) > currentWallet.balance) {
-          setTxError('Số dư không đủ');
+          setTxError('Insufficient balance');
           return;
       }
 
@@ -311,7 +311,7 @@ const App: React.FC = () => {
           setShow2FAPrompt(false);
           executeTransaction();
       } else {
-          setVerifyError('Mã xác thực không đúng');
+          setVerifyError('Invalid authentication code');
       }
   }
 
@@ -334,10 +334,10 @@ const App: React.FC = () => {
             // Trigger poll immediately
             setTimeout(pollData, 4000); 
         } else {
-            setTxError('Giao dịch thất bại.');
+            setTxError('Transaction failed.');
         }
     } catch (e: any) {
-        setTxError(e.message || 'Lỗi gửi tiền');
+        setTxError(e.message || 'Send error');
     } finally {
         setSending(false);
     }
@@ -359,25 +359,25 @@ const App: React.FC = () => {
             </div>
           </div>
           <h2 className="text-2xl font-bold text-center text-white mb-2">
-            {authMode === 'LOGIN' ? 'Đăng Nhập' : 'Tạo Tài Khoản'}
+            {authMode === 'LOGIN' ? 'Login' : 'Create Account'}
           </h2>
           <p className="text-center text-slate-400 mb-6 text-sm">
-            Quản lý tài sản Tron Shasta Testnet của bạn
+            Manage your Tron Shasta Testnet assets
           </p>
 
           <form onSubmit={handleAuth} className="space-y-4">
             <Input 
-              label="Tên đăng nhập" 
+              label="Username" 
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="Nhập username..."
+              placeholder="Enter username..."
             />
             <Input 
-              label="Mật khẩu" 
+              label="Password" 
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Nhập mật khẩu..."
+              placeholder="Enter password..."
             />
             
             {authError && (
@@ -387,7 +387,7 @@ const App: React.FC = () => {
             )}
 
             <Button type="submit" className="w-full mt-4">
-              {authMode === 'LOGIN' ? 'Truy cập Ví' : 'Đăng Ký'}
+              {authMode === 'LOGIN' ? 'Access Wallet' : 'Register'}
             </Button>
           </form>
 
@@ -396,7 +396,7 @@ const App: React.FC = () => {
               onClick={() => { setAuthMode(authMode === 'LOGIN' ? 'REGISTER' : 'LOGIN'); setAuthError(''); }}
               className="text-sm text-purple-400 hover:text-purple-300 hover:underline"
             >
-              {authMode === 'LOGIN' ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}
+              {authMode === 'LOGIN' ? 'No account? Register now' : 'Have an account? Login'}
             </button>
           </div>
         </div>
@@ -442,13 +442,13 @@ const App: React.FC = () => {
                <button 
                 onClick={openSecurityModal}
                 className="flex items-center gap-2 p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
-                title="Cài đặt bảo mật"
+                title="Security Settings"
                >
                  {userProfile?.isTwoFactorEnabled ? <ShieldCheck size={20} className="text-green-400"/> : <Lock size={20} />}
                </button>
 
                <div className="text-right hidden sm:block">
-                  <p className="text-xs text-slate-400">Xin chào,</p>
+                  <p className="text-xs text-slate-400">Hello,</p>
                   <p className="text-sm font-bold text-white">{currentUser}</p>
                </div>
                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-400 transition-colors">
@@ -465,12 +465,12 @@ const App: React.FC = () => {
           <div className="lg:col-span-4 xl:col-span-3 space-y-6">
               <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden flex flex-col max-h-[600px]">
                   <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-                      <h3 className="font-bold text-white">Danh sách Ví</h3>
+                      <h3 className="font-bold text-white">Wallet List</h3>
                       <button 
                          onClick={handleCreateWallet}
                          disabled={isRefreshing}
                          className="p-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                         title="Tạo ví mới"
+                         title="Create New Wallet"
                       >
                          <Plus size={18} />
                       </button>
@@ -479,7 +479,7 @@ const App: React.FC = () => {
                   <div className="overflow-y-auto flex-1 p-2 space-y-2 custom-scrollbar">
                       {wallets.length === 0 ? (
                           <div className="text-center p-6 text-slate-500 text-sm">
-                              Bạn chưa có ví nào. <br/> Hãy tạo ví mới ngay!
+                              No wallets found. <br/> Create one now!
                           </div>
                       ) : (
                           wallets.map(w => (
@@ -517,7 +517,7 @@ const App: React.FC = () => {
                   
                   <div className="p-4 bg-slate-900 border-t border-slate-800">
                       <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-400">Tổng tài sản:</span>
+                          <span className="text-slate-400">Total Assets:</span>
                           <span className="font-bold text-white">{totalBalance.toLocaleString()} TRX</span>
                       </div>
                   </div>
@@ -546,14 +546,14 @@ const App: React.FC = () => {
                                 
                                 <div className="flex items-center gap-4">
                                     <div>
-                                        <p className="text-slate-400 text-sm">Số dư hiện tại</p>
+                                        <p className="text-slate-400 text-sm">Current Balance</p>
                                         <div className="text-3xl font-bold text-white flex items-end gap-2">
                                             {activeWallet.balance.toLocaleString()} <span className="text-base font-normal text-purple-400 mb-1">TRX</span>
                                         </div>
                                     </div>
                                     {price && (
                                         <div className="pl-4 border-l border-slate-700">
-                                            <p className="text-slate-400 text-sm">Quy đổi (VND)</p>
+                                            <p className="text-slate-400 text-sm">Value (VND)</p>
                                             <p className="text-xl font-medium text-slate-200">
                                                 ≈ {(activeWallet.balance * price.vnd).toLocaleString('vi-VN')} ₫
                                             </p>
@@ -564,7 +564,7 @@ const App: React.FC = () => {
                             
                             <div className="flex flex-col gap-2 min-w-[140px]">
                                 <Button onClick={handleManualRefresh} variant="secondary" isLoading={isRefreshing} className="w-full text-sm">
-                                    <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} /> Làm mới
+                                    <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
                                 </Button>
                             </div>
                         </div>
@@ -574,13 +574,13 @@ const App: React.FC = () => {
                             <div className="flex items-start gap-3">
                                 <AlertTriangle className="text-yellow-500 shrink-0 mt-0.5" size={18} />
                                 <div className="flex-1">
-                                    <p className="text-yellow-200 text-sm font-bold mb-1">Private Key (Bảo mật)</p>
+                                    <p className="text-yellow-200 text-sm font-bold mb-1">Private Key (Secret)</p>
                                     <div className="group relative">
                                         <p className="font-mono text-slate-400 text-xs blur-sm hover:blur-none transition-all cursor-text break-all bg-black/20 p-2 rounded border border-yellow-900/30">
                                             {activeWallet.privateKey}
                                         </p>
                                         <div className="absolute inset-0 flex items-center justify-center text-xs text-yellow-500/50 pointer-events-none group-hover:hidden">
-                                            Rê chuột để xem
+                                            Hover to reveal
                                         </div>
                                     </div>
                                 </div>
@@ -593,19 +593,19 @@ const App: React.FC = () => {
                         <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
                             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                                 <Send size={20} className="text-purple-500" />
-                                Chuyển Tiền
+                                Send TRX
                             </h3>
                             
                             <div className="space-y-4">
                                 <Input 
-                                    label="Địa chỉ ví nhận"
+                                    label="Recipient Address"
                                     placeholder="T..."
                                     value={recipient}
                                     onChange={(e) => setRecipient(e.target.value)}
                                 />
                                 <div className="relative">
                                     <Input 
-                                        label="Số lượng TRX"
+                                        label="Amount"
                                         type="number"
                                         placeholder="0.0"
                                         value={amount}
@@ -615,7 +615,7 @@ const App: React.FC = () => {
                                         onClick={() => setAmount(Math.max(0, activeWallet.balance - 1).toString())}
                                         className="absolute right-2 top-8 text-xs text-purple-400 hover:text-purple-300 bg-slate-800 px-2 py-1 rounded"
                                     >
-                                        Tối đa
+                                        Max
                                     </button>
                                 </div>
 
@@ -628,10 +628,10 @@ const App: React.FC = () => {
                                 {txResult && (
                                     <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-xs flex flex-col gap-1">
                                         <div className="flex items-center gap-2 font-bold">
-                                            <CheckCircle size={14} /> Gửi thành công!
+                                            <CheckCircle size={14} /> Sent successfully!
                                         </div>
                                         <a href={`https://shasta.tronscan.org/#/transaction/${txResult.txid}`} target="_blank" rel="noreferrer" className="underline hover:text-green-300">
-                                            Xem transaction ID
+                                            View transaction
                                         </a>
                                     </div>
                                 )}
@@ -642,14 +642,14 @@ const App: React.FC = () => {
                                     className="w-full mt-2"
                                     disabled={!recipient || !amount}
                                 >
-                                    Xác nhận gửi {userProfile?.isTwoFactorEnabled && <ShieldCheck size={16} className="ml-2" />}
+                                    Confirm & Send {userProfile?.isTwoFactorEnabled && <ShieldCheck size={16} className="ml-2" />}
                                 </Button>
                             </div>
                         </div>
 
                         {/* QR RECEIVE */}
                         <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-col items-center justify-center text-center">
-                            <h3 className="text-lg font-bold text-white mb-4">Mã QR Nhận Tiền</h3>
+                            <h3 className="text-lg font-bold text-white mb-4">Receive TRX (QR)</h3>
                             <div className="bg-white p-3 rounded-xl mb-4">
                                 <img 
                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${activeWallet.address.base58}`} 
@@ -658,7 +658,7 @@ const App: React.FC = () => {
                                 />
                             </div>
                             <p className="text-sm text-slate-400 max-w-xs">
-                                Quét mã này để gửi TRX Shasta đến ví <strong>{activeWallet.name}</strong>
+                                Scan to send Shasta TRX to <strong>{activeWallet.name}</strong>
                             </p>
                         </div>
                     </div>
@@ -666,9 +666,9 @@ const App: React.FC = () => {
               ) : (
                   <div className="h-full flex flex-col items-center justify-center bg-slate-900 rounded-2xl border border-slate-800 p-10 text-center opacity-75">
                       <Wallet size={64} className="text-slate-700 mb-4" />
-                      <h3 className="text-xl font-bold text-slate-400 mb-2">Chưa chọn ví</h3>
-                      <p className="text-slate-500 max-w-md">Vui lòng chọn một ví từ danh sách bên trái hoặc tạo ví mới để bắt đầu giao dịch.</p>
-                      <Button onClick={handleCreateWallet} className="mt-6">Tạo Ví Ngay</Button>
+                      <h3 className="text-xl font-bold text-slate-400 mb-2">No Wallet Selected</h3>
+                      <p className="text-slate-500 max-w-md">Please select a wallet from the list or create a new one to start.</p>
+                      <Button onClick={handleCreateWallet} className="mt-6">Create Wallet</Button>
                   </div>
               )}
           </div>
@@ -691,26 +691,26 @@ const App: React.FC = () => {
 
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <ShieldCheck className="text-green-500" />
-                    Cài đặt bảo mật 2FA
+                    2FA Security Setup
                 </h3>
 
                 {userProfile?.isTwoFactorEnabled ? (
                     <div className="space-y-4">
                         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-center">
                             <CheckCircle size={48} className="text-green-500 mx-auto mb-2" />
-                            <p className="text-green-400 font-bold">Bảo mật 2FA đang bật</p>
-                            <p className="text-slate-400 text-sm mt-1">Tài khoản của bạn được bảo vệ bởi Google Authenticator</p>
+                            <p className="text-green-400 font-bold">2FA is Enabled</p>
+                            <p className="text-slate-400 text-sm mt-1">Your account is protected by Google Authenticator</p>
                         </div>
                         <Button variant="danger" onClick={handleDisable2FA} className="w-full">
-                            Tắt bảo mật 2FA
+                            Disable 2FA
                         </Button>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         <p className="text-slate-300 text-sm">
-                            1. Tải ứng dụng <strong>Google Authenticator</strong> trên điện thoại.<br/>
-                            2. Quét mã QR bên dưới.<br/>
-                            3. Nhập mã 6 số để kích hoạt.
+                            1. Download <strong>Google Authenticator</strong> app.<br/>
+                            2. Scan the QR code below.<br/>
+                            3. Enter the 6-digit code to activate.
                         </p>
                         
                         <div className="flex justify-center bg-white p-4 rounded-xl">
@@ -719,7 +719,7 @@ const App: React.FC = () => {
                         
                         <div>
                             <Input 
-                                placeholder="Nhập mã 6 số (VD: 123456)"
+                                placeholder="Enter 6-digit code (e.g. 123456)"
                                 value={setupToken}
                                 onChange={e => {
                                     if (e.target.value.length <= 6) setSetupToken(e.target.value);
@@ -730,7 +730,7 @@ const App: React.FC = () => {
                         </div>
 
                         <Button onClick={handleEnable2FA} className="w-full" disabled={setupToken.length !== 6}>
-                            Kích hoạt 2FA
+                            Enable 2FA
                         </Button>
                     </div>
                 )}
@@ -751,8 +751,8 @@ const App: React.FC = () => {
 
                 <div className="text-center mb-6">
                     <ShieldCheck size={48} className="text-purple-500 mx-auto mb-3" />
-                    <h3 className="text-xl font-bold text-white">Xác thực giao dịch</h3>
-                    <p className="text-slate-400 text-sm">Nhập mã từ Google Authenticator để tiếp tục chuyển tiền.</p>
+                    <h3 className="text-xl font-bold text-white">Security Verification</h3>
+                    <p className="text-slate-400 text-sm">Enter code from Google Authenticator to confirm transaction.</p>
                 </div>
 
                 <div className="space-y-4">
@@ -768,7 +768,7 @@ const App: React.FC = () => {
                     {verifyError && <p className="text-red-400 text-sm text-center font-medium bg-red-900/20 p-2 rounded">{verifyError}</p>}
                     
                     <Button onClick={handle2FAVerifyAndSend} className="w-full" disabled={verifyTokenInput.length !== 6}>
-                        Xác nhận & Gửi tiền
+                        Confirm & Send
                     </Button>
                 </div>
              </div>

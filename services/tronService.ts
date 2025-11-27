@@ -18,7 +18,7 @@ const getTronWeb = (): TronWebInstance => {
     });
     return tronWebInstance!;
   }
-  throw new Error("TronWeb SDK chưa được tải.");
+  throw new Error("TronWeb SDK is not loaded.");
 };
 
 export const createWallet = async (): Promise<WalletData> => {
@@ -73,7 +73,7 @@ export const sendTrx = async (
         transaction: receipt.transaction
       };
     } else {
-        let message = 'Giao dịch thất bại.';
+        let message = 'Transaction failed.';
         if (receipt.message) {
              // Safe conversion if message is hex or byte array
              try {
@@ -85,8 +85,8 @@ export const sendTrx = async (
         throw new Error(message);
     }
   } catch (error: any) {
-    console.error("Lỗi gửi tiền:", error);
-    throw new Error(typeof error === 'string' ? error : error.message || "Giao dịch thất bại");
+    console.error("Send Error:", error);
+    throw new Error(typeof error === 'string' ? error : error.message || "Transaction failed");
   }
 };
 

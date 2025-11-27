@@ -11,7 +11,7 @@ interface Message {
 const AiAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Xin chào! Tôi là trợ lý AI Tron. Bạn có thắc mắc gì về ví hay giao dịch không?' }
+    { role: 'assistant', content: 'Hello! I am your Tron AI Assistant. Do you have any questions about wallets or transactions?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ const AiAssistant: React.FC = () => {
           <div className="bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700">
             <div className="flex items-center gap-2">
               <Bot className="text-pink-500" size={20} />
-              <h3 className="font-bold text-white">Trợ lý Tron AI</h3>
+              <h3 className="font-bold text-white">Tron AI Assistant</h3>
             </div>
             <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
               <X size={20} />
@@ -100,7 +100,7 @@ const AiAssistant: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Hỏi về Tron..."
+                placeholder="Ask about Tron..."
                 className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
               />
               <Button onClick={handleSend} disabled={loading} className="px-3">
